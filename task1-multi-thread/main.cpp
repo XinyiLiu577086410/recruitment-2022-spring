@@ -69,9 +69,6 @@ int k;
 int main(int argc, char** argv) {
     if( argv[2][0] == '1' ) k = 0;
     else k = 1;
-    // for(int i=0;i<argc;i++){
-    //     printf("%s\n", argv[i]);
-    // }
     const unsigned int width = 1600;
     const unsigned int height = 1200;
     const int maxIterations = 256;

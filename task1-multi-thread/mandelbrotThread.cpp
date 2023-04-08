@@ -27,7 +27,7 @@ extern void mandelbrotSerial(
 // workerThreadStart --
 //
 // Thread entrypoint.
-float step[][8]={{3,1.4,0.8,0.8,0.8,0.8,1.4,3},{7.0f/64, 7.0f/64, 7.0f/64, 9.1f/64, 9.1f/64, 9.1f/64, 9.1f/64, 7.0f/64}},start[][8]={{0,3,4.4,5.2,6,6.8,7.6,9},{0.0f, 7.0f/64, 14.0f/64, 21.0f/64, 30.0f/64, 39.0f/64, 48.0f/64, 57.0f/64}};
+float step[][8]={{3,1.4,0.8,0.8,0.8,0.8,1.4,3},{5.0f/64, 5.0f/64, 6.0f/64, 10.0f/64, 10.0f/64, 10.0f/64, 9.0f/64, 9.0f/64}},start[][8]={{0,3,4.4,5.2,6,6.8,7.6,9},{0.0f, 5.0f/64, 10.0f/64, 16.0f/64, 26.0f/64, 36.0f/64, 46.0f/64, 55.0f/64}};
 extern int k;
 void workerThreadStart(WorkerArgs * const args) {
 
@@ -36,27 +36,13 @@ void workerThreadStart(WorkerArgs * const args) {
     // to compute a part of the output image.  For example, in a
     // program that uses two threads, thread 0 could compute the top
     // half of the image and thread 1 could compute the bottom half.
-    
-    //int n = args->height/args->numThreads;
-    // float step[] = {4.5,2.5,2.5,2.5,2.5,2.5,2.5,4.5}, start[] = {0,4.5,7,9.5,12,14.5,17,19.5};
-    // float n = args->height/24;
-    /*
-    for(int i=0;i<8;i++){
-        b[i] = b[i-1]+a[i]
-    }
-    */
+
     unsigned int n[] = {args->height/12,args->height};
-    // std::cout<<"thread:"<<args->threadId<<": from "<<(int)(n[1]*start[1][args->threadId])<<" to "<<(int)(n[1]*start[1][args->threadId])+(int)(n[1]*step[1][args->threadId])<<std::endl;
-    // std::cout<<"n[1]=="<<n[1]<<std::endl;
-    // std::cout<<"step[0][args->threadId]=="<<(step[0][args->threadId])<<std::endl;
-    //std::cout<<k<<std::endl;
     double startTime = CycleTimer::currentSeconds();
     mandelbrotSerial(
         args->x0, args->y0, args->x1, args->y1,
         args->width, args->height,
-        //n*args->threadId,n,
         n[k]*start[k][args->threadId],n[k]*step[k][args->threadId]+1,
-        //(int)(n*start[args->threadId]), (int)(n*step[args->threadId]+1),
         args->maxIterations,
         args->output);
     double endTime = CycleTimer::currentSeconds();
@@ -102,7 +88,6 @@ void mandelbrotThread(
         args[i].maxIterations = maxIterations;
         args[i].numThreads = numThreads;
         args[i].output = output;
-      
         args[i].threadId = i;
     }
 
