@@ -1,3 +1,6 @@
 task1-multi-thread/objs/
 task1-multi-thread/mandelbrot
 task1-multi-thread/*.ppm
+task2-simd/*.o
+task2-simd/myexp
+.vscode
