@@ -27,7 +27,7 @@ extern void mandelbrotSerial(
 // workerThreadStart --
 //
 // Thread entrypoint.
-float step[][8]={{3,1.4,0.8,0.8,0.8,0.8,1.4,3},{5.0f/64, 5.0f/64, 6.0f/64, 10.0f/64, 10.0f/64, 10.0f/64, 9.0f/64, 9.0f/64}},start[][8]={{0,3,4.4,5.2,6,6.8,7.6,9},{0.0f, 5.0f/64, 10.0f/64, 16.0f/64, 26.0f/64, 36.0f/64, 46.0f/64, 55.0f/64}};
+int divide[][9]={{0,300,440,520,600,680,760,900,1200},{0, 94, 188, 300, 488, 673, 862, 1032, 1200}};
 extern int k;
 void workerThreadStart(WorkerArgs * const args) {
 
@@ -36,13 +36,12 @@ void workerThreadStart(WorkerArgs * const args) {
     // to compute a part of the output image.  For example, in a
     // program that uses two threads, thread 0 could compute the top
     // half of the image and thread 1 could compute the bottom half.
-
-    unsigned int n[] = {args->height/12,args->height};
     double startTime = CycleTimer::currentSeconds();
     mandelbrotSerial(
         args->x0, args->y0, args->x1, args->y1,
         args->width, args->height,
-        n[k]*start[k][args->threadId],n[k]*step[k][args->threadId]+1,
+        divide[k][args->threadId], 
+        divide[k][args->threadId + 1]-divide[k][args->threadId],
         args->maxIterations,
         args->output);
     double endTime = CycleTimer::currentSeconds();
