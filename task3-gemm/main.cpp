@@ -6,8 +6,8 @@
 #include <chrono>
 #include <vector>
 #include <cassert>
-
-
+#include <immintrin.h>
+#include <omp.h>
 #define PRINT_TIME(code) do { \
     auto start = system_clock::now(); \
     code \
@@ -25,12 +25,70 @@ using vec = vector<int>;
 const int scale[] = {256, 512, 1024, 2048};
 const string data_path("./data/");
 
+
+
+//通用矩阵乘
+//修改前的函数
+
+/*version 1: cache blocking*/
 void Gemm(const int &size, vec &a, vec &b, vec &c) {
+#pragma omp parallel for schedule(dynamic,2) num_threads(128) shared(a,b,c,size)
     for(int i = 0; i < size; i++)
-        for(int j = 0; j < size; j++)
+        for(int j = 0; j < size; j+=8)
             for(int k = 0; k < size; k++)
+            {
                 c[i*size+j] += a[i*size+k] * b[k*size+j];
+                c[i*size+j+1] += a[i*size+k] * b[k*size+j+1];
+                c[i*size+j+2] += a[i*size+k] * b[k*size+j+2];
+                c[i*size+j+3] += a[i*size+k] * b[k*size+j+3];
+                c[i*size+j+4] += a[i*size+k] * b[k*size+j+4];
+                c[i*size+j+5] += a[i*size+k] * b[k*size+j+5];
+                c[i*size+j+6] += a[i*size+k] * b[k*size+j+6];
+                c[i*size+j+7] += a[i*size+k] * b[k*size+j+7];
+            }
 }
+
+
+// /*version2:Transpose*/
+// void Gemm(const int &size, vec &a, vec &b, vec &c) {
+//     vec bTranspose(size*size,0);
+//     for(int i = 0; i < size; i++)
+//         for(int j = 0; j < size; j++){
+//             bTranspose[j*size+i] = b[i*size+j];
+//         }
+//     #pragma omp parallel for schedule(dynamic,2) num_threads(128) shared(a,b,c,size)
+//     for(int i = 0; i < size; i++)
+//         for(int j = 0; j < size; j++)
+//             for(int k = 0; k < size; k++)
+//             {
+//                 c[i*size+j] += a[i*size+k] * bTranspose[j*size+k];
+//             }
+// }
+
+
+// void Gemm(const int &size, vec &a, vec &b, vec &c) {
+    
+//     __m256i __res, __b, __a,__sum,__sum1;
+//     for(int i = 0; i < size; i++){
+//         for(int j = 0; j < size; j += 8){
+//             for(int k = 0; k < size; k++){
+//                 int tmp[8];
+//                 int aa = a[i*size+k];
+//                 for (int i = 0; i < 8; i++) tmp[i] = aa;// 造向量。
+//                 __a = _mm256_loadu_si256((__m256i const *)tmp);
+//                 __b = _mm256_loadu_si256((__m256i const *)&b[0]+k*size+j);
+//                 __res = _mm256_mullo_epi16(__a, __b);
+//                 __sum1 = _mm256_add_epi32(__res,__sum);
+//                 __sum = __sum1;
+//             }
+//             _mm256_storeu_si256((__m256i *)&c[0]+i*size+j, __sum);// 为什么要限定内存指针类型，莫名其妙的函数定义。
+//         }
+//     }
+
+// }
+/*
+an error: ‘_mm512_storeu_epi32’ was not declared in this scope; did you mean ‘_mm512_store_epi32’?
+*/
 
 void CheckResult(const vec &c, const string &result_path) {
     ifstream file_result(result_path);
@@ -38,6 +96,7 @@ void CheckResult(const vec &c, const string &result_path) {
     float res_i;
     for(int i = 0; i < nelems; i++) {
         file_result >> res_i;
+        // std::cout<<i<<std::endl;
         assert(c[i] == res_i);
     }
     file_result.close();
