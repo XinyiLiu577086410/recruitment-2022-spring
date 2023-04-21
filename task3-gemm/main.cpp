@@ -31,39 +31,39 @@ const string data_path("./data/");
 //修改前的函数
 
 /*version 1: cache blocking*/
-void Gemm(const int &size, vec &a, vec &b, vec &c) {
-#pragma omp parallel for schedule(dynamic,2) num_threads(128) shared(a,b,c,size)
-    for(int i = 0; i < size; i++)
-        for(int j = 0; j < size; j+=8)
-            for(int k = 0; k < size; k++)
-            {
-                c[i*size+j] += a[i*size+k] * b[k*size+j];
-                c[i*size+j+1] += a[i*size+k] * b[k*size+j+1];
-                c[i*size+j+2] += a[i*size+k] * b[k*size+j+2];
-                c[i*size+j+3] += a[i*size+k] * b[k*size+j+3];
-                c[i*size+j+4] += a[i*size+k] * b[k*size+j+4];
-                c[i*size+j+5] += a[i*size+k] * b[k*size+j+5];
-                c[i*size+j+6] += a[i*size+k] * b[k*size+j+6];
-                c[i*size+j+7] += a[i*size+k] * b[k*size+j+7];
-            }
-}
-
-
-// /*version2:Transpose*/
 // void Gemm(const int &size, vec &a, vec &b, vec &c) {
-//     vec bTranspose(size*size,0);
+// #pragma omp parallel for schedule(dynamic,2) num_threads(128) shared(a,b,c,size)
 //     for(int i = 0; i < size; i++)
-//         for(int j = 0; j < size; j++){
-//             bTranspose[j*size+i] = b[i*size+j];
-//         }
-//     #pragma omp parallel for schedule(dynamic,2) num_threads(128) shared(a,b,c,size)
-//     for(int i = 0; i < size; i++)
-//         for(int j = 0; j < size; j++)
+//         for(int j = 0; j < size; j+=8)
 //             for(int k = 0; k < size; k++)
 //             {
-//                 c[i*size+j] += a[i*size+k] * bTranspose[j*size+k];
+//                 c[i*size+j] += a[i*size+k] * b[k*size+j];
+//                 c[i*size+j+1] += a[i*size+k] * b[k*size+j+1];
+//                 c[i*size+j+2] += a[i*size+k] * b[k*size+j+2];
+//                 c[i*size+j+3] += a[i*size+k] * b[k*size+j+3];
+//                 c[i*size+j+4] += a[i*size+k] * b[k*size+j+4];
+//                 c[i*size+j+5] += a[i*size+k] * b[k*size+j+5];
+//                 c[i*size+j+6] += a[i*size+k] * b[k*size+j+6];
+//                 c[i*size+j+7] += a[i*size+k] * b[k*size+j+7];
 //             }
 // }
+
+
+/*version2:Transpose*/
+void Gemm(const int &size, vec &a, vec &b, vec &c) {
+    vec bTranspose(size*size,0);
+    for(int i = 0; i < size; i++)
+        for(int j = 0; j < size; j++){
+            bTranspose[j*size+i] = b[i*size+j];
+        }
+    #pragma omp parallel for schedule(dynamic,2) num_threads(128) shared(a,b,c,size)
+    for(int i = 0; i < size; i++)
+        for(int j = 0; j < size; j++)
+            for(int k = 0; k < size; k++)
+            {
+                c[i*size+j] += a[i*size+k] * bTranspose[j*size+k];
+            }
+}
 
 
 // void Gemm(const int &size, vec &a, vec &b, vec &c) {
