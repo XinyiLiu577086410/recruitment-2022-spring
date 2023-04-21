@@ -8,6 +8,7 @@
 #include <cassert>
 #include <immintrin.h>
 #include <omp.h>
+#include <math.h>
 #define PRINT_TIME(code) do { \
     auto start = system_clock::now(); \
     code \
@@ -96,12 +97,14 @@ const string data_path("./data/");
 /*version2.1+:Transpose,simd(avx512)*/
 void Gemm(const int &size, vec &a, vec &b, vec &c) {
     vec bTranspose(size*size,0);
-    #pragma omp parallel for schedule(dynamic,4) num_threads(128) shared(b,size)
+    int exp = log(size) / log(2);   //解决加速比倒挂的问题。
+    int numthr[] = {16, 32, 128, 128};
+    #pragma omp parallel for schedule(dynamic,4) num_threads(numthr[exp-8]) shared(b,size)
     for(int i = 0; i < size; i++)
         for(int j = 0; j < size; j++){
             bTranspose[j*size+i] = b[i*size+j];
         }
-    #pragma omp parallel for schedule(dynamic,2) num_threads(128) shared(a,b,c,size)
+    #pragma omp parallel for schedule(dynamic,4) num_threads(numthr[exp-8]) shared(a,b,c,size)
     for(int i = 0; i < size; i++)
         for(int j = 0; j < size; j++){
             __m512i _a,_b,res,sum;
