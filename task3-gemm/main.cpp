@@ -30,6 +30,15 @@ const string data_path("./data/");
 //通用矩阵乘
 //修改前的函数
 
+
+// void Gemm(const int &size, vec &a, vec &b, vec &c) {
+//     for(int i = 0; i < size; i++)
+//         for(int j = 0; j < size; j++)
+//             for(int k = 0; k < size; k++)
+//                 c[i*size+j] += a[i*size+k] * b[k*size+j];
+// }
+
+
 /*version 1: cache blocking*/
 // void Gemm(const int &size, vec &a, vec &b, vec &c) {
 // #pragma omp parallel for schedule(dynamic,2) num_threads(128) shared(a,b,c,size)
@@ -49,9 +58,10 @@ const string data_path("./data/");
 // }
 
 
-/*version2:Transpose*/
+/*version2+:Transpose*/
 void Gemm(const int &size, vec &a, vec &b, vec &c) {
     vec bTranspose(size*size,0);
+    #pragma omp parallel for schedule(dynamic,4) num_threads(128) shared(b,size)
     for(int i = 0; i < size; i++)
         for(int j = 0; j < size; j++){
             bTranspose[j*size+i] = b[i*size+j];
