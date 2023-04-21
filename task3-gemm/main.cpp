@@ -116,11 +116,37 @@ const string data_path("./data/");
 //         }
 // }
 
-/*version2.2+:Transpose,simd(avx512)*/
+// /*version2.2+:Transpose,simd(avx512)*/
+// void Gemm(const int &size, vec &a, vec &b, vec &c) {
+//     vec bTranspose(size*size,0);
+//     int exp = log(size) / log(2);   //解决加速比倒挂的问题。
+//     int numthr[] = {16, 32, 128, 128};
+//     #pragma omp parallel for schedule(dynamic,4) num_threads(numthr[exp-8]) shared(b,size)
+//     for(int i = 0; i < size; i++)
+//         for(int j = 0; j < size; j++){
+//             bTranspose[j*size+i] = b[i*size+j];
+//         }
+//     #pragma omp parallel for schedule(dynamic,4) num_threads(numthr[exp-8]) shared(a,b,c,size)
+//     for(int i = 0; i < size; i++)
+//         for(int j = 0; j < size; j++){
+//             __m512i _a,_b,res,sum;
+//             sum = _mm512_setzero_epi32();
+//             for(int k = 0; k < size; k += 16)
+//             {
+//                 _a = _mm512_loadu_si512(&a[0]+i*size+k);
+//                 _b = _mm512_loadu_si512(&bTranspose[0]+j*size+k);
+//                 res = _mm512_mullo_epi32(_a,_b);
+//                 sum = _mm512_add_epi32(sum,res);
+//             }
+//             c[i*size+j] = _mm512_reduce_add_epi32(sum);
+//         }
+// }
+
+/*version2.3+:Transpose,simd(avx512)*/
 void Gemm(const int &size, vec &a, vec &b, vec &c) {
     vec bTranspose(size*size,0);
     int exp = log(size) / log(2);   //解决加速比倒挂的问题。
-    int numthr[] = {16, 32, 128, 128};
+    int numthr[] = {16, 32, 148, 148};
     #pragma omp parallel for schedule(dynamic,4) num_threads(numthr[exp-8]) shared(b,size)
     for(int i = 0; i < size; i++)
         for(int j = 0; j < size; j++){
@@ -129,18 +155,16 @@ void Gemm(const int &size, vec &a, vec &b, vec &c) {
     #pragma omp parallel for schedule(dynamic,4) num_threads(numthr[exp-8]) shared(a,b,c,size)
     for(int i = 0; i < size; i++)
         for(int j = 0; j < size; j++){
-            __m512i _a,_b,res,sum;
-            sum = _mm512_set_epi32(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+            __m512i sum;
+            sum = _mm512_setzero_epi32();
             for(int k = 0; k < size; k += 16)
             {
-                _a = _mm512_loadu_si512(&a[0]+i*size+k);
-                _b = _mm512_loadu_si512(&bTranspose[0]+j*size+k);
-                res = _mm512_mullo_epi32(_a,_b);
-                sum = _mm512_add_epi32(sum,res);
+                sum = _mm512_add_epi32(sum,_mm512_mullo_epi32(_mm512_loadu_si512(&a[0]+i*size+k),_mm512_loadu_si512(&bTranspose[0]+j*size+k)));
             }
             c[i*size+j] = _mm512_reduce_add_epi32(sum);
         }
 }
+
 /*Version 0:simd,no transpose*/
 // void Gemm(const int &size, vec &a, vec &b, vec &c) {
     
