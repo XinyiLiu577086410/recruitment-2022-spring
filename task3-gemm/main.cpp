@@ -142,7 +142,7 @@ const string data_path("./data/");
 //         }
 // }
 
-/*Version 2.4 load _a vector register outside the loop of k*/
+/*Version 2.4 load _a vector register outside the loop of k, to load _a only once*/
 void Gemm(const int &size, vec &a, vec &b, vec &c) {
     vec bTranspose(size*size,0);
     int exp = log(size) / log(2);   //解决加速比倒挂的问题。
