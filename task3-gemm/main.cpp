@@ -141,8 +141,7 @@ const string data_path("./data/");
 //             c[i*size+j] = _mm512_reduce_add_epi32(sum);
 //         }
 // }
-
-/*version2.3+:Transpose,simd(avx512)*/
+/*Version 2.4 load _a vector register outside the loop of k*/
 void Gemm(const int &size, vec &a, vec &b, vec &c) {
     vec bTranspose(size*size,0);
     int exp = log(size) / log(2);   //解决加速比倒挂的问题。
@@ -154,16 +153,18 @@ void Gemm(const int &size, vec &a, vec &b, vec &c) {
         }
     #pragma omp parallel for schedule(dynamic,4) num_threads(numthr[exp-8]) shared(a,b,c,size)
     for(int i = 0; i < size; i++)
-        for(int j = 0; j < size; j++){
-            __m512i sum;
-            sum = _mm512_setzero_epi32();
-            for(int k = 0; k < size; k += 16)
-            {
-                sum = _mm512_add_epi32(sum,_mm512_mullo_epi32(_mm512_loadu_si512(&a[0]+i*size+k),_mm512_loadu_si512(&bTranspose[0]+j*size+k)));
+        for(int k = 0; k < size; k += 16){
+            __m512i _a = _mm512_loadu_si512(&a[0]+i*size+k);
+            for(int j = 0; j < size; j++){
+                // __m512i sum = _mm512_setzero_epi32();
+                // sum = _mm512_add_epi32(sum,_mm512_mullo_epi32(_a,_mm512_loadu_si512(&bTranspose[0]+j*size+k)));
+                c[i*size+j] += _mm512_reduce_add_epi32(
+                                _mm512_mullo_epi32(_a,_mm512_loadu_si512(&bTranspose[0]+j*size+k))
+                                );
             }
-            c[i*size+j] = _mm512_reduce_add_epi32(sum);
         }
 }
+
 
 /*Version 0:simd,no transpose*/
 // void Gemm(const int &size, vec &a, vec &b, vec &c) {
